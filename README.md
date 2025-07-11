@@ -6,6 +6,11 @@
 
 ManyAnims is a batch animation exporter by [elfenliedtopfan5](https://github.com/elfenliedtopfan5)!
 
+# Info
+- ManyAnims supports exporting anim_export and anim_bin
+- ManyAnims only works with SEAnims currently
+#
+
 > [!IMPORTANT]
 > ManyAnims has two versions, one for python 2 (Maya 8.5 > 2022) and one for python 3 (Maya 2023+).
 > 
