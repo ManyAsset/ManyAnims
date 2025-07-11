@@ -1,2 +1,25 @@
+[![ManyAsset](https://img.shields.io/discord/585171589750849538?color=%23FF8711&label=ManyAsset&logo=discord&logoColor=%23FFFFFF)](https://discord.gg/v2TWkeR)
+
+
 # ManyAnims
-ManyAnims
+<img width="2500" height="512" alt="ManyAnims_Logo" src="https://github.com/user-attachments/assets/84fa9111-1a69-45e7-af82-a8e3b9b8be8f" />
+
+ManyAnims is a batch animation exporter by [elfenliedtopfan5](https://github.com/elfenliedtopfan5)!
+
+## Download
+Grab the latest version in the [Releases Page](https://github.com/SadSlothXL/ManyAnims/releases)
+
+## Install
+```
+├── ...
+├── 📁 Documents
+|    └── 📁 Maya
+│        └── 📁 VersionNumber
+│            └── 📁 scripts
+│                └──📜 ManyAnims.py 
+└── ...
+```
+
+## [How to use](https://youtu.be/db6RyGAgsdM)
+
+[![ManyAnims](https://github.com/user-attachments/assets/9dffc9ab-a4bf-4aa7-82cb-9e9ef419bbb4)](https://youtu.be/db6RyGAgsdM)
