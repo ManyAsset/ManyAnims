@@ -13,7 +13,7 @@ ManyAnims is a batch animation exporter by [elfenliedtopfan5](https://github.com
 
 ## Download
 
-Grab the latest version in the [Releases Page](https://github.com/SadSlothXL/ManyAnims/releases)
+Grab the latest version in the [Releases Page](https://github.com/ManyAsset/ManyAnims/releases)
 
 ## Install
 ```
