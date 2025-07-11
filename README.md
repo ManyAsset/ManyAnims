@@ -6,7 +6,13 @@
 
 ManyAnims is a batch animation exporter by [elfenliedtopfan5](https://github.com/elfenliedtopfan5)!
 
+> [!IMPORTANT]
+> ManyAnims has two versions, one for python 2 (Maya 8.5 > 2022) and one for python 3 (Maya 2023+).
+> 
+> Please note that only Maya 2020 and 2024 have been tested!
+
 ## Download
+
 Grab the latest version in the [Releases Page](https://github.com/SadSlothXL/ManyAnims/releases)
 
 ## Install
@@ -20,6 +26,5 @@ Grab the latest version in the [Releases Page](https://github.com/SadSlothXL/Man
 └── ...
 ```
 
-## [How to use](https://youtu.be/db6RyGAgsdM)
-
+## [How To Use](https://youtu.be/db6RyGAgsdM) 
 [![ManyAnims](https://github.com/user-attachments/assets/9dffc9ab-a4bf-4aa7-82cb-9e9ef419bbb4)](https://youtu.be/db6RyGAgsdM)
