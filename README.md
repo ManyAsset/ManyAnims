@@ -1,5 +1,6 @@
 [![ManyAsset](https://img.shields.io/discord/585171589750849538?color=%23FF8711&label=ManyAsset&logo=discord&logoColor=%23FFFFFF)](https://discord.gg/v2TWkeR)
-
+[![ManyAsset](https://img.shields.io/youtube/channel/subscribers/UCQLUoUspSxbTKnhfc6ox03w?style=flat&logo=youtube&label=ManyAsset&color=fb0335
+)](https://www.youtube.com/@ManyAsset)
 
 # ManyAnims
 <img width="2500" height="512" alt="ManyAnims_Logo" src="https://github.com/user-attachments/assets/84fa9111-1a69-45e7-af82-a8e3b9b8be8f" />
