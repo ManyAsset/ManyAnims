@@ -9,7 +9,7 @@ ManyAnims is a batch animation exporter for Maya by [elfenliedtopfan5](https://g
 
 # Info
 - ManyAnims supports exporting anim_export and anim_bin
-- ManyAnims only works with SEAnims currently
+- ManyAnims supports .Cast (2023+ version ONLY) and .SEanims
 #
 
 > [!IMPORTANT]
@@ -33,4 +33,7 @@ Grab the latest version in the [Releases Page](https://github.com/ManyAsset/Many
 ```
 
 ## [How To Use](https://youtu.be/db6RyGAgsdM) 
+> [!IMPORTANT]
+> For Cast you have to have "Import Resets Scene" on!
+
 [![ManyAnims](https://github.com/user-attachments/assets/9dffc9ab-a4bf-4aa7-82cb-9e9ef419bbb4)](https://youtu.be/db6RyGAgsdM)
