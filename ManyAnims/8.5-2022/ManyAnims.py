@@ -8,7 +8,7 @@ anim_path = None
 export_path = None
 normal_joints = []
 ads_joints = []
-default_namespace = ""  # slouth rig is iw4
+default_namespace = ""  # sloth rig is iw4
 selected_anim_files = []
 export_cod4 = True
 export_bo3 = False
@@ -351,6 +351,7 @@ def show_about_dialog(*args):
     # Instructions frame
     frame = cmds.frameLayout(label="ChangeLog:", collapsable=False, borderStyle="etchedIn", marginWidth=10, marginHeight=10)
     cmds.columnLayout(adjustableColumn=True, rowSpacing=5)
+    cmds.text(label="- Version 1.0.1 - UI changes", align="left")
     cmds.text(label="- Version 1.0.0 - Initial release", align="left")
     cmds.setParent("..")  # columnLayout
     cmds.setParent("..")  # frameLayout
@@ -402,8 +403,8 @@ def create_menu():
 
     cmds.menu("manyAnimsMenu", label="ManyAnims", parent="MayaWindow")
     cmds.menuItem(divider=True)
-    cmds.menuItem(label="Select Animations to Export", command=select_anim_files_dialog)
-    cmds.menuItem(label="Export Path", command=set_export_path)
+    cmds.menuItem(label="Import", command=select_anim_files_dialog)
+    cmds.menuItem(label="Export", command=set_export_path)
     cmds.menuItem(divider=True)
     treyarch_checkbox = cmds.menuItem(label="Export Treyarch", checkBox=False, command=on_treyarch_checked)
     iw_sh_checkbox = cmds.menuItem(label="Export IW/SH", checkBox=False, command=on_iw_sh_checked)
