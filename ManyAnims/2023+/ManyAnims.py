@@ -152,35 +152,33 @@ else:
 def select_anim_files_dialog(*args):
     global anim_path, selected_anim_files
 
-    # Switch filter/caption depending on Use CAST toggle
     file_filter = "*.cast" if use_cast else "*.seanim"
     caption = "Select CAST Files to Export" if use_cast else "Select SEAnim Files to Export"
 
+    # Start from saved import location if exists, otherwise project root
     start_dir = settings.get("import_location", "")
     if not start_dir or not os.path.exists(start_dir):
-        start_dir = cmds.workspace(q=True, rd=True)  # fallback to current project root
+        start_dir = cmds.workspace(q=True, rd=True)
+
     selected = cmds.fileDialog2(fileMode=4, dialogStyle=2, caption=caption,
                                 fileFilter=file_filter, startingDirectory=start_dir)
-
-    # Save directory if chosen
-    if selected:
-        settings["import_location"] = os.path.dirname(selected[0])
-        save_settings()
 
     if selected:
         selected_anim_files = selected
         anim_path = os.path.dirname(selected[0])
-        print("[ManyAnims] Animation path set to: %s" % anim_path)
-        print("[ManyAnims] Selected %d file(s)" % len(selected_anim_files))
+
+        print(f"[ManyAnims] Animation path set to: {anim_path}")
+        print(f"[ManyAnims] Selected {len(selected_anim_files)} file(s)")
         cmds.confirmDialog(
             title="Animations Selected",
-            message="Selected %d animation(s)." % len(selected_anim_files),
+            message=f"Selected {len(selected_anim_files)} animation(s).",
             button=["OK"]
         )
         enable_ui_elements_if_paths_selected()
     else:
         selected_anim_files = []
         cmds.confirmDialog(title="No Selection", message="No animations selected.", button=["OK"])
+
 
 
 
@@ -334,17 +332,16 @@ def set_export_path(*args):
     start_dir = settings.get("export_location", "")
     if not start_dir or not os.path.exists(start_dir):
         start_dir = cmds.workspace(q=True, rd=True)
+
     selected = cmds.fileDialog2(fileMode=3, dialogStyle=2, caption="Select Export Folder",
                                 startingDirectory=start_dir)
 
     if selected:
         export_path = selected[0]
-        settings["export_location"] = export_path
-        save_settings()
-    if selected:
-        export_path = selected[0]
-        cmds.confirmDialog(title="Export Path Selected", message="Export Path: " + export_path, button=["OK"])
+        cmds.confirmDialog(title="Export Path Selected",
+                           message=f"Export Path: {export_path}", button=["OK"])
         enable_ui_elements_if_paths_selected()
+
 
 def enable_ui_elements_if_paths_selected():
     global anim_path, export_path
