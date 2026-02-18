@@ -7,21 +7,20 @@
 
 ManyAnims is a batch animation exporter for Maya by [elfenliedtopfan5](https://github.com/elfenliedtopfan5)!
 
-# Info
-- ManyAnims supports exporting anim_export and anim_bin
-- ManyAnims supports .Cast (2023+ version ONLY) and .SEanims
-#
+# 📌Info
+- ManyAnims supports exporting anim_export and anim_bin.
+- ManyAnims supports .Cast (2022+ version ONLY) and .SEanims.
+- ManyAnims has two versions, one for python 2 (Maya 8.5 > 2021) and one for python 3 (Maya 2022+).
+   - Please note that only Maya 2020 and 2024 have been tested!
 
 > [!IMPORTANT]
-> ManyAnims has two versions, one for python 2 (Maya 8.5 > 2022) and one for python 3 (Maya 2023+).
-> 
-> Please note that only Maya 2020 and 2024 have been tested!
+> Version 1.2.0+ requires our version of [CODMayaTools](https://github.com/ManyAsset/CODMayaTools/releases)
 
-## Download
+## 📥Download
 
 Grab the latest version in the [Releases Page](https://github.com/ManyAsset/ManyAnims/releases)
 
-## Install
+## 🧩Install
 ```
 ├── ...
 ├── 📁 Documents
@@ -32,8 +31,8 @@ Grab the latest version in the [Releases Page](https://github.com/ManyAsset/Many
 └── ...
 ```
 
-## [How To Use](https://youtu.be/db6RyGAgsdM) 
+## 👨‍💻[How To Use](https://youtu.be/db6RyGAgsdM) 
 > [!IMPORTANT]
-> For Cast you have to have "Import Resets Scene" on!
+> For Cast tick "Import Resets Scene", otherwise you might run into issues!
 
 [![ManyAnims](https://github.com/user-attachments/assets/9dffc9ab-a4bf-4aa7-82cb-9e9ef419bbb4)](https://youtu.be/db6RyGAgsdM)
