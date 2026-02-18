@@ -8,8 +8,9 @@
 ManyAnims is a batch animation exporter for Maya by [elfenliedtopfan5](https://github.com/elfenliedtopfan5)!
 
 # 📌Info
-- ManyAnims supports exporting anim_export and anim_bin.
-- ManyAnims supports .Cast (2022+ version ONLY) and .SEanims.
+- ManyAnims supports:
+   - Exporting anim_export and anim_bin.
+   - Importing .Cast (2022+ version ONLY) and .SEanims.
 - ManyAnims has two versions, one for python 2 (Maya 8.5 > 2021) and one for python 3 (Maya 2022+).
    - Please note that only Maya 2020 and 2024 have been tested!
 
