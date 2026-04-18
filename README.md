@@ -3,7 +3,7 @@
 )](https://www.youtube.com/@ManyAsset)
 
 # ManyAnims
-<img width="2500" height="512" alt="ManyAnims_Logo" src="https://github.com/user-attachments/assets/84fa9111-1a69-45e7-af82-a8e3b9b8be8f" />
+<img alt="ManyAnims_Logo" src="https://github.com/user-attachments/assets/84fa9111-1a69-45e7-af82-a8e3b9b8be8f" />
 
 ManyAnims is a batch animation exporter for Maya by [elfenliedtopfan5](https://github.com/elfenliedtopfan5)!
 
