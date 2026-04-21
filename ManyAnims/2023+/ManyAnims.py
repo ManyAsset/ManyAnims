@@ -17,9 +17,15 @@ export_bo3 = False
 export_cast = False
 use_cast = True
 use_se_mode = False
+game_prefix = ""
+export_selected_only = False
+use_name_remap = False
 
 # --- Save Settings ---
 SETTINGS_FILE = os.path.join(os.getenv("APPDATA"),"ManyAnims","manyanims_settings.json")
+
+
+
 
 
 #default settings
@@ -30,13 +36,10 @@ settings = {
     "export_bo3": False,
     "default_namespace": "",
     "import_location": "",
-    "export_location": ""
+    "export_location": "",
+    "game_prefix": "",
+    "use_name_remap": False
 }
-
-
-
-
-
 
 
 def ensure_setting_dir():
@@ -71,6 +74,10 @@ def load_settings():
     default_namespace = settings.get("default_namespace", "")
     import_location = settings.get("import_location", "")
     export_location = settings.get("export_location", "")
+    game_prefix = settings.get("game_prefix", "")
+    global use_name_remap
+
+    use_name_remap = settings.get("use_name_remap", False)
 
     # --- If the menu already exists, update checkboxes visually ---
     if cmds.menuItem("useCastMenuItem", exists=True):
@@ -81,6 +88,8 @@ def load_settings():
         cmds.menuItem("cod4ExportMenuItem", edit=True, checkBox=export_cod4)
     if cmds.menuItem("bo3ExportMenuItem", exists=True):
         cmds.menuItem("bo3ExportMenuItem", edit=True, checkBox=export_bo3)
+    if cmds.menuItem("nameRemapMenuItem", exists=True):
+        cmds.menuItem("nameRemapMenuItem", edit=True, checkBox=use_name_remap)
 
 
 def save_settings():
@@ -252,12 +261,56 @@ def toggle_cod4_export(*args):
     settings["export_bo3"] = export_bo3
     save_settings()
 
+
+
+
     # Rest of existing logic...
     CoDMayaTools.SetCurrentGame("CoD4")
     auto_rename_state = CoDMayaTools.QueryToggableOption("AutomaticRename")
     if auto_rename_state:
         CoDMayaTools.SetToggableOption("AutomaticRename")
     cmds.evalDeferred("CoDMayaTools.CreateMenu()")
+
+
+def toggle_export_selected_only(*args):
+    global export_selected_only
+
+    export_selected_only = not export_selected_only
+    cmds.menuItem("exportSelectedMenuItem", edit=True, checkBox=export_selected_only)
+
+    print(f"[ManyAnims] Export Selected Only Mode: {export_selected_only}")
+
+    # -------------------------------------------------
+    # AUTO TRIGGER EXPORT WHEN ENABLED
+    # -------------------------------------------------
+    if export_selected_only:
+
+        if not anim_path or not export_path:
+            cmds.confirmDialog(
+                title="Error",
+                message="Please select both Anim Path and Export Path first.",
+                button=["OK"]
+            )
+            return
+
+        current_selection = cmds.ls(selection=True)
+
+        if not current_selection:
+            cmds.confirmDialog(
+                title="Error",
+                message="No joints selected!",
+                button=["OK"]
+            )
+            return
+
+        print("[ManyAnims] Auto-triggering export using selected joints...")
+
+        # Trigger export loop
+        if use_cast:
+            load_cast_from_path(anim_path)
+        else:
+            load_seanim_from_path(anim_path)
+
 
 def toggle_bo3_export(*args):
     global export_bo3, export_cod4
@@ -351,10 +404,27 @@ def enable_ui_elements_if_paths_selected():
 def toggle_ui_elements(enable):
     cmds.menuItem(treyarch_checkbox, edit=True, enable=enable)
     cmds.menuItem(iw_sh_checkbox, edit=True, enable=enable)
-    cmds.menuItem(select_normal_joints_button, edit=True, enable=enable)
-    cmds.menuItem(select_ads_joints_button, edit=True, enable=enable)
+    cmds.menuItem(export_selected_menu_item, edit=True, enable=enable)
+    #cmds.menuItem(select_normal_joints_button, edit=True, enable=enable)
+    #cmds.menuItem(select_ads_joints_button, edit=True, enable=enable)
 
 def trigger_export_if_all_selected():
+    global export_selected_only
+
+    # --- NEW MODE: Live Selection Only ---
+    if export_selected_only:
+        if anim_path and export_path:
+            if use_cast:
+                load_cast_from_path(anim_path)
+            else:
+                load_seanim_from_path(anim_path)
+        else:
+            cmds.confirmDialog(title="Error",
+                               message="Please select both Anim Path and Export Path first.",
+                               button=["OK"])
+        return
+
+    # --- ORIGINAL BEHAVIOR ---
     if normal_joints and ads_joints:
         if anim_path and export_path:
             if use_cast:
@@ -362,7 +432,31 @@ def trigger_export_if_all_selected():
             else:
                 load_seanim_from_path(anim_path)
         else:
-            cmds.confirmDialog(title="Error", message="Please select both Anim Path and Export Path first.", button=["OK"])
+            cmds.confirmDialog(title="Error",
+                               message="Please select both Anim Path and Export Path first.",
+                               button=["OK"])
+
+
+def remap_anim_names(name):
+    """Rename anim filenames."""
+    name = name.replace("fast", "quick")
+    name = name.replace("reload_intro", "reload_in")
+    name = name.replace("first_pullout", "raise_first")
+    name = name.replace("first_time_pullout", "raise_first")
+    name = name.replace("first_raise", "raise_first")
+    name = name.replace("pullout_first ", "raise_first")
+    name = name.replace("lastshot", "fire_last")
+    name = name.replace("last_shot", "fire_last")
+    name = name.replace("lastfire", "fire_last")
+    name = name.replace("ads_rechamber", "rechamber_ads")
+    name = name.replace("ads_base_up", "ads_up")
+    name = name.replace("ads_base_down", "ads_down")
+    name = name.replace("viewmodel", "vm")
+    name = name.replace("va_", "vm_")
+    name = name.replace("ads_fire", "fire_ads")
+    name = name.replace("putaway", "drop")
+    name = name.replace("pullout", "raise")
+    return name
 
 
 def load_seanim_from_path(anim_path):
@@ -391,11 +485,19 @@ def load_seanim_from_path(anim_path):
         print("Loading animation file: %s" % anim_file_path)
         SEToolsPlugin.__load_seanim__(anim_file_path, scene_time=False, blend_anim=False)
 
+        if export_selected_only:
+            method = "manual"
+        elif cmds.menuItem(treyarch_checkbox, query=True, checkBox=True):
+            method = "treyarch"
+        else:
+            method = "iw/sh"
+
         export_xanim_file(
             anim_file_path,
             export_path,
-            method_type="treyarch" if cmds.menuItem(treyarch_checkbox, query=True, checkBox=True) else "iw/sh"
+            method_type=method
         )
+
 
         update_progress_bar(progress_control, idx)
 
@@ -413,6 +515,7 @@ def load_seanim_from_path(anim_path):
     cmds.menuItem(treyarch_checkbox, edit=True, checkBox=False)
     cmds.menuItem(iw_sh_checkbox, edit=True, checkBox=False)
     print("[ManyAnims] Reset Treyarch/IW-SH checkboxes after export.")
+    reset_export_selected_mode()
 
 
 original_save_reminder = CoDMayaTools.SaveReminder
@@ -422,44 +525,113 @@ def modified_save_reminder(allow_unsaved=True):
 
 def export_xanim_file(input_file_path, output_directory, method_type="treyarch"):
     ext = ".xanim_export" if export_cod4 else ".xanim_bin" if export_bo3 else ".xanim_export"
-    output_file_path = os.path.join(output_directory, os.path.basename(input_file_path).replace('.seanim', ext))
+    # --- CLEAN FILENAME (remap anim names) ---
+    base = os.path.basename(input_file_path).replace(".seanim", "")
+    if use_name_remap:
+        base = remap_anim_names(base) # Rename anim filename
+    base = apply_game_prefix(base)
+
+    # Re-append extension
+    output_file_path = os.path.join(output_directory, base + ext)
+
+    print(f"[ManyAnims] Remapped output filename → {output_file_path}")
     print("Exporting to path: %s" % output_file_path)
 
-    filename_lower = os.path.basename(input_file_path).lower()
-    is_ads = "ads_up" in filename_lower or "ads_down" in filename_lower
+    filename_lower = os.path.basename(input_file_path).lower() # added on 18/02/26 - added support for ads anims that have base in the name is before was skipped.
+    is_ads = (
+        "ads_up" in filename_lower
+        or "ads_down" in filename_lower
+        or "ads_base_up" in filename_lower
+        or "ads_base_down" in filename_lower
+    )
 
     # --- Joint selection logic ---
     if method_type == "manual":
-        if is_ads:
-            if ads_joints:
-                cmds.select(ads_joints)
-            else:
-                cmds.confirmDialog(title="Error", message="ADS joints are not selected!", button=["OK"])
+
+        current_selection = cmds.ls(selection=True)
+
+        # -----------------------------
+        # Export Selected Only Mode
+        # -----------------------------
+        if export_selected_only:
+
+            if not current_selection:
+                cmds.confirmDialog(
+                    title="Error",
+                    message="Export Selected Only mode is enabled but no joints are selected!",
+                    button=["OK"]
+                )
                 return
+
+            print(f"[ManyAnims] Export Selected Only → Using current selection: {current_selection}")
+            cmds.select(clear=True)
+            for j in current_selection:
+                cmds.select(j, add=True, hierarchy=True)
+
+        # -----------------------------
+        # Standard Manual Mode
+        # -----------------------------
         else:
-            if normal_joints:
-                cmds.select(normal_joints)
+
+            if current_selection:
+                print(f"[ManyAnims] Manual Mode → Using current selection: {current_selection}")
+                cmds.select(current_selection)
+
             else:
-                cmds.confirmDialog(title="Error", message="Normal joints are not selected!", button=["OK"])
-                return
+                print("[ManyAnims] Manual Mode → No current selection. Falling back to stored joints.")
+
+                if is_ads and ads_joints:
+                    print(f"[ManyAnims] Using stored ADS joints: {ads_joints}")
+                    cmds.select(ads_joints)
+
+                elif normal_joints:
+                    print(f"[ManyAnims] Using stored Normal joints: {normal_joints}")
+                    cmds.select(normal_joints)
+
+                else:
+                    cmds.confirmDialog(
+                        title="Error",
+                        message="No joints selected and no stored joints available!",
+                        button=["OK"]
+                    )
+                    return
+
     elif method_type == "treyarch":
+
         if is_ads:
-            cmds.select("%s:tag_view" % default_namespace, "%s:tag_torso" % default_namespace)
+            cmds.select(f"{default_namespace}:tag_view",
+                        f"{default_namespace}:tag_torso")
         else:
-            cmds.select("%s:tag_torso" % default_namespace, "%s:tag_cambone" % default_namespace, hierarchy=True)
+            cmds.select(f"{default_namespace}:tag_torso",
+                        f"{default_namespace}:tag_cambone",
+                        hierarchy=True)
+
     elif method_type == "iw/sh":
+
         if is_ads:
-            if cmds.objExists("%s:tag_ads" % default_namespace):
-                cmds.select("%s:tag_view" % default_namespace, "%s:tag_ads" % default_namespace)
+            if cmds.objExists(f"{default_namespace}:tag_ads"):
+                cmds.select(f"{default_namespace}:tag_view",
+                            f"{default_namespace}:tag_ads")
             else:
-                cmds.confirmDialog(title="Error", message="ADS joints ('%s:tag_ads') not found!" % default_namespace, button=["OK"])
+                cmds.confirmDialog(
+                    title="Error",
+                    message=f"ADS joints ('{default_namespace}:tag_ads') not found!",
+                    button=["OK"]
+                )
                 return
         else:
-            if cmds.objExists("%s:tag_ads" % default_namespace) and cmds.objExists("%s:tag_cambone" % default_namespace):
-                cmds.select("%s:tag_ads" % default_namespace, "%s:tag_cambone" % default_namespace, hierarchy=True)
+            if cmds.objExists(f"{default_namespace}:tag_ads") and cmds.objExists(f"{default_namespace}:tag_cambone"):
+                cmds.select(f"{default_namespace}:tag_ads",
+                            f"{default_namespace}:tag_cambone",
+                            hierarchy=True)
             else:
-                cmds.confirmDialog(title="Error", message="Required joints not found in namespace '%s'!" % default_namespace, button=["OK"])
+                cmds.confirmDialog(
+                    title="Error",
+                    message=f"Required joints not found in namespace '{default_namespace}'!",
+                    button=["OK"]
+                )
                 return
+
 
     # --- Setup CoDMayaTools for export ---
     CoDMayaTools.SaveReminder = modified_save_reminder
@@ -474,6 +646,24 @@ def export_xanim_file(input_file_path, output_directory, method_type="treyarch")
     qualityField = CoDMayaTools.OBJECT_NAMES['xanim'][0] + "_qualityField"
     cmds.intField(qualityField, edit=True, value=0)
     CoDMayaTools.ReadNotetracks('xanim')
+
+    # --- Clean notetracks (RemoveAudioOneShot calls RefreshXAnimWindow internally,
+    #     which wipes the SaveToField — so we re-apply all export fields afterwards) ---
+    try:
+        CoDMayaTools.RemoveUnusableNotes('xanim')
+        print("[ManyAnims] Removed unusable notetracks.")
+    except Exception as e:
+        print(f"[ManyAnims] Failed to remove unusable notetracks: {e}")
+    try:
+        CoDMayaTools.RemoveAudioOneShot('xanim')
+        print("[ManyAnims] Stripped AudioOneShot prefixes from notetracks.")
+    except Exception as e:
+        print(f"[ManyAnims] Failed to strip AudioOneShot notetracks: {e}")
+
+    # Re-apply export fields that RefreshXAnimWindow may have wiped
+    cmds.textField(textFieldName, edit=True, text=output_file_path)
+    cmds.intField(fpsFieldName, edit=True, value=30)
+    cmds.intField(qualityField, edit=True, value=0)
 
     # --- Suppress CoDMayaTools progress window ---
     _original_window = cmds.window  # save original reference
@@ -520,51 +710,68 @@ def show_about_dialog(*args):
     except:
         pass
 
-    # Create window with fixed size and close button only
-    window = cmds.window("manyanimsAboutWindow", title="About ManyAnims", sizeable=False, minimizeButton=False, maximizeButton=False)
-
-    form = cmds.formLayout()
-
-    # Title section
-    title_col = cmds.columnLayout(adjustableColumn=True, rowSpacing=4)
-    cmds.text(label="ManyAnims Tool for Maya", font="boldLabelFont", align="center")
-    cmds.text(label="Batch Animation Exporter", align="center")
-    cmds.text(label="Created by elfenliedtopfan5 for Sloth", align="center")
-    cmds.separator(style="in", height=10)
-    cmds.setParent(form)
-
-    # Changelog section
-    frame = cmds.frameLayout(label="ChangeLog:", collapsable=False, marginWidth=5, marginHeight=5)
-    cmds.columnLayout(adjustableColumn=True, rowSpacing=5)
-    cmds.text(label="Version 1.1.0: Cast Support, UI Changes", align="center")
-    cmds.text(label="Version 1.0.0: Initial release", align="center")
-    cmds.setParent("..")  # columnLayout
-    cmds.setParent("..")  # frameLayout
-
-    # Spacer and OK button
-    bottom_sep = cmds.separator(style="in", height=5)
-    button_row = cmds.rowLayout(numberOfColumns=1, height=40, adjustableColumn=1)
-    cmds.button(label="OK", height=30, width=100, command=lambda x: cmds.deleteUI("manyanimsAboutWindow"))
-    cmds.setParent(form)
-
-    # Attach layout elements
-    cmds.formLayout(form, edit=True,
-        attachForm=[
-            (title_col, 'top', 10), (title_col, 'left', 10), (title_col, 'right', 10),
-            (frame, 'left', 10), (frame, 'right', 10),
-            (bottom_sep, 'left', 10), (bottom_sep, 'right', 10),
-            (button_row, 'left', 0), (button_row, 'right', 0), (button_row, 'bottom', 10)
-        ],
-        attachControl=[
-            (frame, 'top', 10, title_col),
-            (bottom_sep, 'top', 10, frame),
-            (button_row, 'top', 10, bottom_sep)
-        ]
+    window = cmds.window(
+        "manyanimsAboutWindow",
+        title="About ManyAnims",
+        sizeable=False,
+        minimizeButton=False,
+        maximizeButton=False
     )
 
-    # Show and fix window size
+    # Outer column with padding
+    cmds.columnLayout(adjustableColumn=True, rowSpacing=0, columnOffset=("both", 20))
+
+    cmds.separator(style="none", height=16)
+
+    # Tool name (bold + large feel via boldLabelFont)
+    cmds.text(label="ManyAnims Tool for Maya", font="boldLabelFont", align="center", height=22)
+    cmds.separator(style="none", height=4)
+    cmds.text(label="Batch Animation Exporter", font="smallPlainLabelFont", align="center", height=16)
+    cmds.text(label="Created by elfenliedtopfan5 for Sloth", font="smallPlainLabelFont", align="center", height=16)
+
+    cmds.separator(style="none", height=12)
+    cmds.separator(style="in", height=1)
+    cmds.separator(style="none", height=12)
+
+    # Changelog header
+    cmds.text(label="Changelog", font="boldLabelFont", align="left", height=18)
+    cmds.separator(style="none", height=8)
+
+    # Changelog entries — each as a two-part row: version tag + description
+    changelog = [
+        ("1.3.0", "Fixed BO3, BO4 and CW not exporting correct ads tags. Added anim auto rename and prefix option."),
+        ("1.2.1", "Fixed set import and export location bug."),
+        ("1.2.0", "Added set import/export location, fixed progress bar, added COD1 and COD2 rig converter support."),
+        ("1.1.0", "Cast support and UI changes."),
+        ("1.0.0", "Initial release."),
+    ]
+
+    for version, desc in changelog:
+        cmds.rowLayout(numberOfColumns=2, columnWidth2=(60, 460), columnAlign2=("left", "left"), columnOffset2=(0, 8))
+        cmds.text(label="v{}".format(version), font="boldLabelFont", align="left")
+        cmds.text(label=desc, font="smallPlainLabelFont", align="left", wordWrap=True)
+        cmds.setParent("..")  # rowLayout
+        cmds.separator(style="none", height=5)
+
+    cmds.separator(style="none", height=12)
+    cmds.separator(style="in", height=1)
+    cmds.separator(style="none", height=10)
+
+    # OK button centered
+    cmds.rowLayout(numberOfColumns=3, adjustableColumn=2, columnWidth3=(180, 100, 180))
+    cmds.separator(style="none")
+    cmds.button(
+        label="OK",
+        height=28,
+        command=lambda x: cmds.deleteUI("manyanimsAboutWindow")
+    )
+    cmds.separator(style="none")
+    cmds.setParent("..")  # rowLayout
+
+    cmds.separator(style="none", height=12)
+
     cmds.showWindow(window)
-    cmds.window(window, edit=True, widthHeight=(450, 250))  
+    cmds.window(window, edit=True, widthHeight=(560, 340))
 
 def open_namespace_dialog(*args):
     global default_namespace
@@ -586,7 +793,13 @@ def open_namespace_dialog(*args):
 
 # CAST SUPPORT ADD HERE ELFENLIEDTOPFAN5 19/09/2025 TAKEN FROM DERIVED FROM ALICE LOAD METHORD ON 01/09/25
 
-
+def reset():
+    try:
+        import castplugin
+        castplugin.utilityClearAnimation()
+        print("[ManyAnims] Manual Reset Triggered")
+    except Exception as e:
+        print(f"[ManyAnims] Reset failed: {e}")
 
 # --- Toggle CAST export ---
 def toggle_use_cast(*args):
@@ -614,6 +827,59 @@ def toggle_se_mode(*args):
     settings["use_se_mode"] = use_se_mode
     settings["use_cast"] = use_cast
     save_settings()
+
+
+def toggle_name_remap(*args):
+    global use_name_remap
+
+    use_name_remap = not use_name_remap
+    cmds.menuItem("nameRemapMenuItem", edit=True, checkBox=use_name_remap)
+
+    settings["use_name_remap"] = use_name_remap
+    save_settings()
+
+    print(f"[ManyAnims] Filename Remapping Enabled: {use_name_remap}")
+
+
+
+def set_game_prefix(*args):
+    global game_prefix
+    result = cmds.promptDialog(
+        title="Set Game Prefix",
+        message="Enter Game Prefix (e.g t6, iw3):",
+        button=["OK", "Clear", "Cancel"],
+        defaultButton="OK",
+        cancelButton="Cancel",
+        dismissString="Cancel",
+        text=game_prefix
+    )
+
+    if result == "OK":
+        game_prefix = cmds.promptDialog(query=True, text=True).strip().lower()
+        settings["game_prefix"] = game_prefix
+        save_settings()
+        cmds.confirmDialog(title="Game Prefix Set", message=f"Game Prefix set to:\n{game_prefix}")
+    elif result == "Clear":
+        game_prefix = ""
+        settings["game_prefix"] = ""
+        save_settings()
+        cmds.confirmDialog(title="Game Prefix Cleared", message="Game Prefix removed.")
+
+
+def apply_game_prefix(name):
+    """Insert game prefix after the first vm_ or va_ anywhere in the name."""
+    if not game_prefix:
+        return name
+
+    # Replace the FIRST vm_ only
+    if "vm_" in name:
+        return name.replace("vm_", f"vm_{game_prefix}_", 1)
+
+    # Replace the FIRST va_ only
+    if "va_" in name:
+        return name.replace("va_", f"va_{game_prefix}_", 1)
+
+    return name
 
 
 
@@ -647,6 +913,9 @@ def load_cast_from_path(anim_path):
 
     progress_control = create_progress_bar(len(files_to_process))
 
+    # --- Cache original manual selection BEFORE CAST modifies it
+    cached_manual_selection = cmds.ls(selection=True)
+
     for idx, cast_file_path in enumerate(files_to_process, 1):
         cast_file = os.path.basename(cast_file_path)
         print(f"[ManyAnims] Loading CAST animation: {cast_file_path}")
@@ -677,7 +946,16 @@ def load_cast_from_path(anim_path):
 
         # --- Determine export extension (.xanim_bin / .xanim_export)
         ext = ".xanim_export" if export_cod4 else ".xanim_bin"
-        output_file_path = os.path.join(export_path, cast_file.replace(".cast", ext))
+        # --- CLEAN FILENAME (remap anim names) ---
+        base = cast_file.replace(".cast", "")
+        if use_name_remap:
+            base = remap_anim_names(base)
+        base = apply_game_prefix(base)
+
+        output_file_path = os.path.join(export_path, base + ext)
+
+        print(f"[ManyAnims] Remapped CAST output filename → {output_file_path}")
+
         print(f"[ManyAnims] Exporting to: {output_file_path}")
 
         # --- Refresh CoDMayaTools and prepare export
@@ -695,43 +973,109 @@ def load_cast_from_path(anim_path):
         cmds.intField(qualityField, edit=True, value=0)
 
         # --- Determine method type
-        method_type = "treyarch" if cmds.menuItem(treyarch_checkbox, query=True, checkBox=True) else "iw/sh"
-        fname = cast_file.lower()
-        is_ads = "ads_up" in fname or "ads_down" in fname
+        #method_type = "treyarch" if cmds.menuItem(treyarch_checkbox, query=True, checkBox=True) else "iw/sh" 
+        if export_selected_only:
+            method_type = "manual"
+        elif cmds.menuItem(treyarch_checkbox, query=True, checkBox=True):
+            method_type = "treyarch"
+        else:
+            method_type = "iw/sh"
+        fname = cast_file.lower() # have added in support for base as well 18/02/26
+        is_ads = (
+            "ads_up" in fname
+            or "ads_down" in fname
+            or "ads_base_up" in fname
+            or "ads_base_down" in fname
+        )
 
         # --- Joint selection
         try:
-            if method_type == "treyarch":
+            if method_type == "manual":
+
+                current_selection = cached_manual_selection
+
+                if not current_selection:
+                    cmds.confirmDialog(
+                        title="Error",
+                        message="No joints selected for manual export!",
+                        button=["OK"]
+                    )
+                    continue
+
+                print(f"[ManyAnims] CAST Manual Mode → Using current selection: {current_selection}")
+                cmds.select(clear=True)
+                for j in current_selection:
+                    if cmds.objExists(j):
+                        cmds.select(j, add=True)
+
+            elif method_type == "treyarch":
+
                 if is_ads:
-                    cmds.select(f"{default_namespace}:tag_view", f"{default_namespace}:tag_torso")
+                    cmds.select(f"{default_namespace}:tag_view",
+                                f"{default_namespace}:tag_torso")
                 else:
-                    cmds.select(f"{default_namespace}:tag_torso", f"{default_namespace}:tag_cambone", hierarchy=True)
+                    cmds.select(f"{default_namespace}:tag_torso",
+                                f"{default_namespace}:tag_cambone",
+                                hierarchy=True)
+
             elif method_type == "iw/sh":
+
                 if is_ads:
                     if cmds.objExists(f"{default_namespace}:tag_ads"):
-                        cmds.select(f"{default_namespace}:tag_view", f"{default_namespace}:tag_ads")
+                        cmds.select(f"{default_namespace}:tag_view",
+                                    f"{default_namespace}:tag_ads")
                     else:
-                        cmds.confirmDialog(title="Error",
-                                           message=f"ADS joint ('{default_namespace}:tag_ads') not found!",
-                                           button=["OK"])
+                        cmds.confirmDialog(
+                            title="Error",
+                            message=f"ADS joint ('{default_namespace}:tag_ads') not found!",
+                            button=["OK"]
+                        )
                         continue
                 else:
                     if cmds.objExists(f"{default_namespace}:tag_ads") and cmds.objExists(f"{default_namespace}:tag_cambone"):
-                        cmds.select(f"{default_namespace}:tag_ads", f"{default_namespace}:tag_cambone", hierarchy=True)
+                        cmds.select(f"{default_namespace}:tag_ads",
+                                    f"{default_namespace}:tag_cambone",
+                                    hierarchy=True)
                     else:
-                        cmds.confirmDialog(title="Error",
-                                           message=f"Required joints not found in namespace '{default_namespace}'!",
-                                           button=["OK"])
+                        cmds.confirmDialog(
+                            title="Error",
+                            message=f"Required joints not found in namespace '{default_namespace}'!",
+                            button=["OK"]
+                        )
                         continue
+
         except Exception as e:
             cmds.warning(f"[ManyAnims]  Failed to select joints for {cast_file}: {e}")
             continue
 
-        # --- Read notetracks
-        try:
-            CoDMayaTools.ReadNotetracks('xanim')
-        except Exception as e:
-            print(f"[ManyAnims]  Failed to read notetracks: {e}")
+        # --- Read notetracks (only if CastNotetracks node exists in scene)
+        has_cast_notetracks = cmds.objExists("CastNotetracks")
+        if has_cast_notetracks:
+            try:
+                CoDMayaTools.ReadNotetracks('xanim')
+                print("[ManyAnims] Read CAST notetracks.")
+            except Exception as e:
+                print(f"[ManyAnims]  Failed to read notetracks: {e}")
+
+            # --- Clean notetracks (RemoveAudioOneShot calls RefreshXAnimWindow internally,
+            #     which wipes the SaveToField — so we re-apply the path afterwards) ---
+            try:
+                CoDMayaTools.RemoveUnusableNotes('xanim')
+                print("[ManyAnims] Removed unusable notetracks.")
+            except Exception as e:
+                print(f"[ManyAnims]  Failed to remove unusable notetracks: {e}")
+            try:
+                CoDMayaTools.RemoveAudioOneShot('xanim')
+                print("[ManyAnims] Stripped AudioOneShot prefixes from notetracks.")
+            except Exception as e:
+                print(f"[ManyAnims]  Failed to strip AudioOneShot notetracks: {e}")
+
+            # Re-apply export fields that RefreshXAnimWindow may have wiped
+            cmds.textField(textFieldName, edit=True, text=output_file_path)
+            cmds.intField(fpsFieldName, edit=True, value=30)
+            cmds.intField(qualityField, edit=True, value=0)
+        else:
+            print("[ManyAnims] No CastNotetracks node found — skipping notetrack read/clean.")
 
 
 
@@ -756,6 +1100,18 @@ def load_cast_from_path(anim_path):
         # --- Export animation and safely clear notetracks
         try:
             CoDMayaTools.GeneralWindow_ExportSelected('xanim', False)
+            castplugin.utilityClearAnimation()
+
+            # -----------------------------
+            # Manual Mode Reset Per Anim
+            # -----------------------------
+            if method_type == "manual":
+                try:
+                    castplugin.utilityClearAnimation()
+                    print("[ManyAnims] Manual mode → resetting scene per anim (CAST)")
+                except Exception as e:
+                    print(f"[ManyAnims] Manual reset failed: {e}")
+
             # --- check for Joint Groups before clearing notetracks ---
 
             # --- Check for specific rig joint groups before clearing notetracks ---
@@ -793,10 +1149,18 @@ def load_cast_from_path(anim_path):
     cmds.menuItem(treyarch_checkbox, edit=True, checkBox=False)
     cmds.menuItem(iw_sh_checkbox, edit=True, checkBox=False)
     print("[ManyAnims] Reset Treyarch/IW-SH checkboxes after CAST export.")
+    reset_export_selected_mode()
 
 
+def reset_export_selected_mode():
+    global export_selected_only
 
+    export_selected_only = False
 
+    if cmds.menuItem("exportSelectedMenuItem", exists=True):
+        cmds.menuItem("exportSelectedMenuItem", edit=True, checkBox=False)
+
+    print("[ManyAnims] Export Selected Joints mode reset.")
 
     
 def create_menu():
@@ -813,12 +1177,21 @@ def create_menu():
     cmds.menuItem(divider=True)
     treyarch_checkbox = cmds.menuItem(label="Export Treyarch", checkBox=False, command=on_treyarch_checked)
     iw_sh_checkbox = cmds.menuItem(label="Export IW/SH", checkBox=False, command=on_iw_sh_checked)
-    cmds.menuItem(divider=True)
-    select_normal_joints_button = cmds.menuItem(label="Select Normal Joints", command=select_normal_joints)
-    select_ads_joints_button = cmds.menuItem(label="Select ADS Joints", command=select_ads_joints)
+    global export_selected_menu_item
+
+    export_selected_menu_item = cmds.menuItem(
+        "exportSelectedMenuItem",
+        label="Export Selected Joints",
+        checkBox=False,
+        enable=False,  # start disabled
+        command=toggle_export_selected_only
+    )
+    #select_normal_joints_button = cmds.menuItem(label="Select Normal Joints", command=select_normal_joints)
+    #select_ads_joints_button = cmds.menuItem(label="Select ADS Joints", command=select_ads_joints)
     cmds.menuItem(divider=True)
 
     cmds.menuItem(subMenu=True, label="Settings", tearOff=False)
+    cmds.menuItem(label="Set Game Prefix...", command=set_game_prefix)
     cmds.menuItem(label="Set Namespace...", command=open_namespace_dialog)
     cmds.menuItem(divider=True)
     cmds.menuItem("cod4ExportMenuItem", label="Export .xanim_export", checkBox=export_cod4, command=toggle_cod4_export)
@@ -829,6 +1202,12 @@ def create_menu():
     cmds.menuItem(divider=True)
     cmds.menuItem(label="Set Import Location...", command=lambda *args: set_import_location())
     cmds.menuItem(label="Set Export Location...", command=lambda *args: set_export_location())
+    cmds.menuItem(divider=True)
+    cmds.menuItem("nameRemapMenuItem",
+                label="Anim Auto Rename",
+                checkBox=use_name_remap,
+                command=toggle_name_remap)
+
     cmds.setParent("manyAnimsMenu", menu=True)
     cmds.menuItem(label="About", command=show_about_dialog)
 
