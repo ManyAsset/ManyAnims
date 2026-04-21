@@ -26,9 +26,11 @@ Grab the latest version in the [Releases Page](https://github.com/ManyAsset/Many
 |    └── 📁 Maya
 │        └── 📁 VersionNumber
 │            └── 📁 scripts
-│                └──📜 ManyAnims.py 
+│                ├──📜 ManyAnims.py
+│                └──📜 userSetup.mel
 └── ...
 ```
+- Open your `userSetup.mel` and add `python("import ManyAnims");`, save and restart Maya if you have it open.
 
 ## 👨‍💻[How To Use](https://youtu.be/db6RyGAgsdM) 
 > [!IMPORTANT]
